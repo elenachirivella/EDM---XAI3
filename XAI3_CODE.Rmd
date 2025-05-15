@@ -1,0 +1,157 @@
+---
+title: "XAI 3"
+output:
+  word_document: default
+  html_document: default
+date: "2025-05-12"
+---
+ Paso 1: Cargar paquetes necesarios
+```{r}
+library(randomForest)
+library(pdp)
+library(ggplot2)
+library(dplyr)
+library(readr)
+
+```
+
+ Paso 2: Cargar el dataset de bike rentals
+```{r}
+
+bike_data <- read_csv("C:/Users/Elena Chirivella/OneDrive - UPV/CARRERA/4o/edm/EDM ELEN/practicas/Practica 5 Sin sol/day.csv")
+```
+Paso 3: Entrenar modelo Random Forest para predecir cnt
+
+```{r}
+# Seleccionar variables relevantes
+bike_model <- randomForest(cnt ~ instant + temp + hum + windspeed,
+                           data = bike_data, 
+                           ntree = 300,
+                           importance = TRUE)
+
+# Ver importancia de las variables
+importance(bike_model)
+
+```
+Paso 4: Calcular y representar los PDP unidimensionales
+
+```{r}
+# PDP para instant (días desde 2011)
+pdp_instant <- partial(bike_model, pred.var = "instant", grid.resolution = 20)
+plot_instant <- autoplot(pdp_instant) + ggtitle("PDP - Días desde 2011")
+
+# PDP para temperatura
+pdp_temp <- partial(bike_model, pred.var = "temp", grid.resolution = 20)
+plot_temp <- autoplot(pdp_temp) + ggtitle("PDP - Temperatura")
+
+# PDP para humedad
+pdp_hum <- partial(bike_model, pred.var = "hum", grid.resolution = 20)
+plot_hum <- autoplot(pdp_hum) + ggtitle("PDP - Humedad")
+
+# PDP para velocidad del viento
+pdp_wind <- partial(bike_model, pred.var = "windspeed", grid.resolution = 20)
+plot_wind <- autoplot(pdp_wind) + ggtitle("PDP - Velocidad del viento")
+
+```
+ Paso 5: Mostrar los gráficos
+
+```{r}
+# Mostrar todos los PDPs
+print(plot_instant)
+print(plot_temp)
+print(plot_hum)
+print(plot_wind)
+
+```
+
+Paso 6 : Calcular PDP bidimensional
+```{r}
+# PDP 2D con temperatura y humedad
+pdp_2d <- partial(bike_model,
+                  pred.var = c("temp", "hum"),
+                  grid.resolution = 20,
+                  progress = "text")
+# Visualizar como mapa de calor
+pdp_plot <- ggplot(pdp_2d, aes(x = temp, y = hum, fill = yhat)) +
+  geom_tile(width = 0.02, height = 0.02) +  # ancho/alto para que no haya huecos
+  scale_fill_viridis_c(option = "plasma") +
+  labs(title = "PDP 2D - Influencia conjunta de temperatura y humedad",
+       x = "Temperatura normalizada",
+       y = "Humedad",
+       fill = "Alquileres predichos") +
+  theme_minimal()
+
+print(pdp_plot)
+```
+Mostrar densidades de temperatura y humedad
+
+```{r}
+# Tomar una muestra aleatoria para que sea más rápido
+set.seed(123)  # para reproducibilidad
+bike_sample <- sample_n(bike_data, 150)
+# Densidad de temperatura
+ggplot(bike_sample, aes(x = temp)) +
+  geom_density(fill = "skyblue") +
+  labs(title = "Distribución de temperatura")
+
+# Densidad de humedad
+ggplot(bike_sample, aes(x = hum)) +
+  geom_density(fill = "lightgreen") +
+  labs(title = "Distribución de humedad")
+
+```
+ANALISIS DE COMO INFLUYEN DIFERENTES VARIABLES A LA VIVIENDA
+
+```{r}
+house_data <- read_csv("C:/Users/Elena Chirivella/OneDrive - UPV/CARRERA/4o/edm/EDM ELEN/practicas/Practica 5 Sin sol/kc_house_data.csv")
+set.seed(123)
+house_sample <- sample_n(house_data, 300)
+```
+Entrenar el modelo Random Forest
+
+
+```{r}
+house_model <- randomForest(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + yr_built,
+                            data = house_sample,
+                            ntree = 300)
+
+
+```
+
+
+```{r}
+# PDP para bedrooms
+pdp_bed <- partial(house_model, pred.var = "bedrooms", grid.resolution = 10)
+plot_bed <- autoplot(pdp_bed) + ggtitle("PDP - Bedrooms")
+
+# PDP para bathrooms
+pdp_bath <- partial(house_model, pred.var = "bathrooms", grid.resolution = 10)
+plot_bath <- autoplot(pdp_bath) + ggtitle("PDP - Bathrooms")
+
+# PDP para sqft_living
+pdp_sqft <- partial(house_model, pred.var = "sqft_living", grid.resolution = 20)
+plot_sqft <- autoplot(pdp_sqft) + ggtitle("PDP - Sqft Living")
+
+# PDP para floors
+pdp_floors <- partial(house_model, pred.var = "floors", grid.resolution = 10)
+plot_floors <- autoplot(pdp_floors) + ggtitle("PDP - Floors")
+
+```
+
+
+```{r}
+print(plot_bed)
+print(plot_bath)
+print(plot_sqft)
+print(plot_floors)
+
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
